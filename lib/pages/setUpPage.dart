@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_application_1/pages/home.dart';
 
 class SetUpPage extends StatefulWidget {
   const SetUpPage({super.key});
@@ -31,11 +33,27 @@ class _SetUpPageState extends State<SetUpPage> {
     }
   }
 
+  // check if city exists
+  Future _checkCity() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    // Try reading data from the counter key
+    final city = prefs.getString('city') ?? "";
+
+    if (city != "") {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const Home()),
+      );
+    } else {
+      fetchCities();
+    }
+  }
+
   @override
   initState() {
-    fetchCities();
-
     _foundCities = [];
+    _checkCity();
     super.initState();
   }
 
@@ -54,6 +72,20 @@ class _SetUpPageState extends State<SetUpPage> {
     setState(() {
       _foundCities = results;
     });
+  }
+
+  // save the default city to local storage
+  void _saveCity(String cityName) async {
+    // obtain shared preferences
+    final prefs = await SharedPreferences.getInstance();
+
+    // set value
+    await prefs.setString('city', cityName);
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const Home()),
+    );
   }
 
   @override
@@ -123,6 +155,8 @@ class _SetUpPageState extends State<SetUpPage> {
                                           bottomLeft: Radius.circular(5)),
                                     ),
                                     child: ListTile(
+                                      onTap: () => _saveCity(
+                                          _foundCities[index]['name']),
                                       leading: const Icon(Icons.location_on,
                                           color: Colors.black, size: 30.0),
                                       title: Text(_foundCities[index]['name'],
